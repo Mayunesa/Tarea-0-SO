@@ -7,10 +7,12 @@
 - ctrl+shift+p ---> WSL: Connect to WSL
 
 ### 1. Clonar el repo desde WSL
-- Clonado desde: https://github.com/Mayunesa/Tarea-0-SO
+- git clone https://github.com/Mayunesa/Tarea-0-SO.git
+- cd Tarea-0-SO
+- code .
 
 ### 2. Crear una nueva rama
-- Rama: magdalena
+- git checkout -b magdalena
 
 ### 3. Instalar de Dependencias
 - sudo apt update
