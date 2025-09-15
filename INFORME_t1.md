@@ -1,7 +1,9 @@
 
 # **Informe tarea 1**
 
-## **Pasos a seguir**:
+## **A. Funcionamiento de las llamadas al sistema:**
+
+## **B. Explicación de las modificaciones realizadas (con los pasos seguidos):**:
 
 ### 1. Crear nueva rama
 - git checkout -b magdalena_t1
@@ -20,8 +22,9 @@
 
 ### 3. Modificar los archivos necesarios:
 - "kernel/syscall.h": 
-    - #define SYS_getppid 22
-    - #define SYS_getancestor 23
+    >- #define SYS_getppid 22
+    >- #define SYS_getancestor 23
+    - **¿Para qué?:** Para definir los números identificadores únicos para las nuevas llamadas al sistema (getppid y getancestor).
 - "kernel/sysproc.c": 
     1. Al final del archivo, pusimos:\
         >uint64\
@@ -50,6 +53,7 @@
         
         >return p->pid;\
         >}
+    - **¿Para qué?:** Para implementar la lógica principal de las llamadas al sistema.
 - "kernel/syscall.c": 
     - En el array extern, agregamos: 
         >1. extern uint64 sys_getppid(void);
@@ -57,14 +61,17 @@
     - En el array "static uint64 (*syscalls[])(void)", agregamos: 
         >1. [SYS_getppid]   sys_getppid,
         >2. [SYS_getancestor]   sys_getancestor,
+    - **¿Para qué?:** Para registrar las nuevas funciones en el sistema de llamadas del kernel.
 - "user/user.h":
     - Dentro de las "system calls", agregar:
         >1. int getppid(void);
         >2. int getancestor(int level);
+    - **¿Para qué?:** Para declarar las funciones, de modo que estén disponibles en programas de usuario.
 - "user/usys.pl": 
     - Al final del archivo, abajo de las demás "entry", agregar:
         >1. entry("getppid");
         >2. entry("getancestor");
+    - **¿Para qué?:** Para generar automáticamente el código que permite la transición de user a kernel.
 
 ### 4. Creación de "yosoytupadre.c"
 - Crear el archivo "yosoytupadre.c" dentro de "user".
@@ -82,20 +89,20 @@
 - git commit -m "Tarea 1 completa :)"
 - git push origin magdalena_t1
 
-## **Dificultades encontradas**
-1. En el paso 3 de la creación de "yosoytupadre.c" me apareció este error:\
-    "kernel/sysproc.c: In function ‘sys_getancestor’:\
-    kernel/sysproc.c:119:6: error: void value not ignored as it ought to be\
-    119 |   if(argint(0, &level) < 0)\
-        |      ^~~~~~~~~~~~~~~~~\
-    make: *** [<builtin>: kernel/sysproc.o] Error 1"
+## **C. Dificultades encontradas y cómo se resolvieron:**
+1. En el paso 3 de la creación de "yosoytupadre.c" apareció este error:
+    >"kernel/sysproc.c: In function ‘sys_getancestor’:\
+    >kernel/sysproc.c:119:6: error: void value not ignored as it ought to be\
+    >119 |   if(argint(0, &level) < 0)\
+    >    |      ^~~~~~~~~~~~~~~~~\
+    >make: *** [<builtin>: kernel/sysproc.o] Error 1"
     - Lo solucionamos cambiando la línea 119 por "argint(0, &level);"
-2. En el paso 1 de "Probar funcionamiento", obtuvimos un error: todos los ancestros salían con resultado "-1" (lo que significa que hay error).\
-Para solucionarlo, agregamos esto:\
->if(level == 0)\
->   return p->pid;
+2. En el paso 1 de "Probar funcionamiento", obtuvimos un error: todos los ancestros salían con resultado "-1".\
+Para solucionarlo, agregamos esto:
+    >if(level == 0)\
+    >   return p->pid;
 
-## **Pasos generales para hacerlo funcionar (en la terminal):**
+## **Pasos generales para hacerlo funcionar (en la terminal, si quieres borramos esto despuésss):**
 1. make qemu (para iniciar xv6)
     - Si se desea, antes poner "make clean" y después "make", para comprobar si hay errores o si funciona bien
 2. yosoytupadre 
