@@ -3,6 +3,11 @@
 
 ## **A. Funcionamiento de las llamadas al sistema:**
 
+- Las llamadas al sistema (syscalls) son funciones predefinidas que permiten al usuario solicitar servicios al kernel. De esta forma, las aplicaciones externas no acceden directamente al hardware o al sistema operativo, sino que lo hacen a través de una interfaz controlada, segura y limitada. En el caso de xv6, algunas syscalls son “SYS_fork”, “SYS_exit”, “SYS_wait”, entre otros. 
+- En términos de codificación de xv6, para activar un llamado al sistema el usuario debe invocar a cualquiera de las funciones declaradas en user.h. Esto provoca que usys.S genere un ecall que llega a una trampa del kernel (trap.c) donde se reconoce que la interrupción es un syscall. Desde este punto, se ejecuta la función syscall() (definida en syscall.c), la cual obtiene el número de la función solicitada (definido en syscall.h). Este se usa para mapear el puntero a la función del kernel requerida (definidas en sysproc.c), para luego invocarla. Finalmente, se almacena su valor de retorno para devolverlo al usuario y el kernel vuelve a su estado normal de ejecución.
+- En este trabajo se implementó 2 syscalls nuevas: SYS_getppid y SYS_getancestor. La primera devuelve el ID del proceso padre que lo invoca. Mientras que, SYS_getancestor retorna tanto el PID del proceso mismo, como la de su padre y su abuelo. En caso de que no existan tantos ancestros, este devuelve -1. 
+
+
 ## **B. Explicación de las modificaciones realizadas (con los pasos seguidos):**:
 
 ### 1. Crear nueva rama
@@ -102,7 +107,7 @@ Para solucionarlo, agregamos esto:
     >if(level == 0)\
     >   return p->pid;
 
-## **Pasos generales para hacerlo funcionar (en la terminal, si quieres borramos esto despuésss):**
+## **Pasos generales para hacerlo funcionar:**
 1. make qemu (para iniciar xv6)
     - Si se desea, antes poner "make clean" y después "make", para comprobar si hay errores o si funciona bien
 2. yosoytupadre 
