@@ -131,6 +131,9 @@ found:
     release(&p->lock);
     return 0;
   }
+  // NUEVO: inicializar los campos del scheduler por lotería
+  p->tickets = 100;      // valor inicial por defecto es 100
+  p->cpu_slices = 0;     // contador de veces elegido
 
   // An empty user page table.
   p->pagetable = proc_pagetable(p);
@@ -279,6 +282,10 @@ kfork(void)
   // Cause fork to return 0 in the child.
   np->trapframe->a0 = 0;
 
+  // Copy parent's tickets and initialize cpu_slices for the child
+  //np->tickets = p->tickets;
+  //np->cpu_slices = 0;
+
   // increment reference counts on open file descriptors.
   for(i = 0; i < NOFILE; i++)
     if(p->ofile[i])
@@ -351,6 +358,9 @@ kexit(int status)
   wakeup(p->parent);
   
   acquire(&p->lock);
+    // --- imprime resumen antes de que el proceso quede zombie ---
+  printf("Proceso PID %d finalizando: tickets=%d, cpu_slices=%d\n",p->pid, p->tickets, p->cpu_slices);
+  // ------------------------------------------------------------
 
   p->xstate = status;
   p->state = ZOMBIE;
@@ -418,46 +428,80 @@ kwait(uint64 addr)
 //  - swtch to start running that process.
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
+int
+random(void)
+{
+  static unsigned long seed = 1;
+  seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+  return seed;
+}
+
 void
 scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
-
   c->proc = 0;
-  for(;;){
-    // The most recent process to run may have had interrupts
-    // turned off; enable them to avoid a deadlock if all
-    // processes are waiting. Then turn them back off
-    // to avoid a possible race between an interrupt
-    // and wfi.
-    intr_on();
-    intr_off();
 
-    int found = 0;
+  for(;;){
+    // Habilitar interrupciones antes de buscar un proceso.
+    intr_on();
+
+    int total = 0;
+
+    // 1: Calcular el total de tickets de todos los procesos RUNNABLE
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if(p->state == RUNNABLE) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
-
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
-        found = 1;
+      // Robustez: asegurar al menos 1 ticket
+        if(p->tickets < 1)
+          p->tickets = 1;
+        total += p->tickets;
       }
       release(&p->lock);
     }
-    if(found == 0) {
-      // nothing to run; stop running on this core until an interrupt.
+
+
+    if(total == 0) {
+      // Si no hay procesos listos, detener CPU hasta la siguiente interrupción.
       asm volatile("wfi");
+      continue;
+    }
+
+    // 2: Elegir un número ganador entre [1, total_tickets]
+    int r = (random() % total) + 1;
+
+    // 3: Recorrer procesos acumulando tickets hasta encontrar el ganador
+    int acc = 0;
+    for(p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+
+      if(p->state == RUNNABLE) {
+        acc += p->tickets;
+
+        if(acc >= r) {
+          // Proceso ganador
+          p->cpu_slices++;      // Contador de uso de CPU
+          p->state = RUNNING;
+          c->proc = p;
+
+          swtch(&c->context, &p->context);
+
+          // El proceso regresó al scheduler.
+          c->proc = 0;
+          //printf("PID %d elegido %d veces (tickets=%d)\n", p->pid, p->cpu_slices, p->tickets);
+
+
+          release(&p->lock);
+          break;
+        }
+      }
+
+      release(&p->lock);
     }
   }
 }
+
 
 // Switch to scheduler.  Must hold only p->lock
 // and have changed proc->state. Saves and restores

@@ -134,3 +134,21 @@ sys_getancestor(void)
   
   return p->pid;
 }
+
+uint64
+sys_settickets(void)
+{
+  int n;
+  
+  argint(0, &n);
+
+  // Robustez: si es menor que 1, forzar a 1
+  if (n < 1)
+    n = 1;
+
+  // Asignar tickets al proceso actual
+  myproc()->tickets = n;
+
+  return 0;
+}
+
