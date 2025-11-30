@@ -484,3 +484,91 @@ ismapped(pagetable_t pagetable, uint64 va)
   }
   return 0;
 }
+
+int mrdprotect(void *addr, int len)
+{
+  struct proc *p = myproc();
+  uint64 va = (uint64)addr;
+  pte_t *pte;
+  
+  // Validar alineación
+  if(va % PGSIZE != 0)
+    return -1;
+  
+  // Validar len
+  if(len <= 0)
+    return -1;
+  
+  // Validar que está en espacio de usuario
+  if(va >= MAXVA)
+    return -1;
+  
+  // Recorrer cada página
+  for(int i = 0; i < len; i++){
+    uint64 current_va = va + i * PGSIZE;
+    
+    // Verificar que no sea memoria del kernel
+    if(current_va >= MAXVA)
+      return -1;
+    
+    // Obtener PTE
+    pte = walk(p->pagetable, current_va, 0);
+    
+    // Verificar que existe y es válida
+    if(pte == 0 || (*pte & PTE_V) == 0)
+      return -1;
+    
+    // Verificar que es de usuario
+    if((*pte & PTE_U) == 0)
+      return -1;
+    
+    // Quitar bit de lectura
+    *pte = *pte & ~PTE_R;
+  }
+  sfence_vma();
+  return 0;
+}
+
+int munrdprotect(void *addr, int len)
+{
+  struct proc *p = myproc();
+  uint64 va = (uint64)addr;
+  pte_t *pte;
+  
+  // Validar alineación
+  if(va % PGSIZE != 0)
+    return -1;
+  
+  // Validar len
+  if(len <= 0)
+    return -1;
+  
+  // Validar que está en espacio de usuario
+  if(va >= MAXVA)
+    return -1;
+  
+  // Recorrer cada página
+  for(int i = 0; i < len; i++){
+    uint64 current_va = va + i * PGSIZE;
+    
+    // Verificar que no sea memoria del kernel
+    if(current_va >= MAXVA)
+      return -1;
+    
+    // Obtener PTE
+    pte = walk(p->pagetable, current_va, 0);
+    
+    // Verificar que existe y es válida
+    if(pte == 0 || (*pte & PTE_V) == 0)
+      return -1;
+    
+    // Verificar que es de usuario
+    if((*pte & PTE_U) == 0)
+      return -1;
+    
+    // Activar bit de lectura
+    *pte = *pte | PTE_R;
+  }
+  sfence_vma();
+  return 0;
+}
