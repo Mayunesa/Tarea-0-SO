@@ -1,3 +1,7 @@
+## Tarea 3: Protección de Lectura en XV6
+
+Magdalena Hernández y Vania Medic.
+
 ## Pasos seguidos
 
 ### 1. Crear branch "magdalena_t3" y carpeta "TAREA-3-SO"
@@ -94,4 +98,5 @@
         - Revisar fallos.
         - Primero, comento "addr[0] = 'A';". make clean y make qemu --> usertrap(): unexpected scause 0xd pid=3
             sepc=0x2c stval=0x4000
-        - Luego de la prueba y los resultados obtenidos se observa que la lectura esta bloqueda por nuestra función mrdprotect(), por lo tanto cuando se intenta leer una dirección que fue protegida, lanza el error anterior y el sistema cae. Esto indica una buena implementación de mrdprotect(). En cuanto a munrdprotect(), esta se probó protegiendo y restaurando la protección de una dirección, pero evitando acceder a la lectura cuando no estaba permitido, para que el sistema no caiga. Esta prueba resultó exitosa, concluyendo la correcta implementación de ambas funciones.
+    
+    Luego de la prueba y los resultados obtenidos se observa que la lectura esta bloqueda por nuestra función mrdprotect(), por lo tanto cuando se intenta leer una dirección que fue protegida, lanza el error anterior y el sistema cae. Esto indica una buena implementación de mrdprotect(). En cuanto a munrdprotect(), esta se probó protegiendo y restaurando la protección de una dirección, pero evitando acceder a la lectura cuando no estaba permitido, para que el sistema no caiga. Esta prueba resultó exitosa, concluyendo la correcta implementación de ambas funciones.
